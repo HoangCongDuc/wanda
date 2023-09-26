@@ -3,7 +3,7 @@ import heapq
 import torch 
 import torch.nn as nn 
 from .sparsegpt import SparseGPT 
-from .layerwrapper import WrappedGPT
+from .layerwrapper import WrappedLayer
 from .data import get_loaders 
 
 from pdb import set_trace as st 
@@ -145,7 +145,7 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
 
         wrapped_layers = {}
         for name in subset:
-            wrapped_layers[name] = WrappedGPT(subset[name])
+            wrapped_layers[name] = WrappedLayer(subset[name])
 
         def add_batch(name):
             def tmp(_, inp, out):
@@ -201,6 +201,7 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
 
             subset[name].weight.data[W_mask] = 0  ## set weights to zero 
 
+        import ipdb; ipdb.set_trace()
         for j in range(args.nsamples):
             with torch.no_grad():
                 outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]

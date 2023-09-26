@@ -2,14 +2,16 @@ import torch
 import torch.nn as nn
 
 # Define WrappedGPT class
-class WrappedGPT:
+class WrappedLayer:
     """
     This class wraps a GPT layer for specific operations.
     """
 
-    def __init__(self, layer, layer_id=0, layer_name="none"):
+    def __init__(self, layer, layer_id=0, layer_name="none", device=None):
         self.layer = layer
-        self.dev = self.layer.weight.device
+        if device is None:
+            device = layer.weight.device
+        self.dev = device
         self.rows = layer.weight.data.shape[0]
         self.columns = layer.weight.data.shape[1]
 

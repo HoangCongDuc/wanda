@@ -3,7 +3,8 @@
 import numpy as np
 import random
 import torch
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
+from pathlib import Path
 
 # Set seed for reproducibility
 def set_seed(seed):
@@ -64,6 +65,28 @@ def get_c4(nsamples, seed, seqlen, tokenizer):
     valenc = valenc.input_ids[:, :(256 * seqlen)]
     valenc = TokenizerWrapper(valenc)
     return trainloader, valenc
+
+# Load and process code dataset
+def get_code(nsamples, seed, tokenizer):
+    # Load the dataset
+    data_path = Path("~").expanduser() / "datasets" / "nickrosh/Evol-Instruct-Code-80k-v1"
+    data = load_from_disk(data_path)
+    data = data['train']
+
+    # Generate samples from training set
+    random.seed(seed)
+    samples = []
+
+    prompt_template = "Below is an instruction that describes a request regarding programming. "\
+                      "Write a response that appropriately completes the request.\n\n"\
+                      "### Instruction:\n{instruction}\n\n### Response:\n{response}"
+    for i in random.sample(range(len(data)), nsamples):
+        prompt = prompt_template.format(instruction=data[i]['instruction'], response=data[i]['output'])
+        samples.append(prompt)
+        
+    samples = tokenizer(samples, return_tensors='pt', padding='longest', truncation=True)
+    return samples
+        
 
 # Function to select the appropriate loader based on dataset name
 def get_loaders(name, nsamples=128, seed=0, seqlen=2048, tokenizer=None):
