@@ -1,4 +1,5 @@
 from pathlib import Path
+from argparse import ArgumentParser
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -9,6 +10,14 @@ from datasets import load_from_disk
 from tqdm import tqdm
 
 from lib.data import get_loaders
+
+
+parser = ArgumentParser()
+parser.add_argument('--model_dir', type=str, default="~/models/models--Phind--Phind-CodeLlama-34B-v2")
+parser.add_argument('--data_path', type=str, default="~/datasets/nickrosh/Evol-Instruct-Code-80k-v1")
+parser.add_argument('--batch_size', type=int, default=8)
+args = parser.parse_args()
+print(args)
 
 
 def get_attention_mask(attention_mask_bool, device=None):
@@ -28,12 +37,9 @@ def get_attention_mask(attention_mask_bool, device=None):
 
 torch.set_grad_enabled(False)
 
-model_dir = "~/models/models--Phind--Phind-CodeLlama-34B-v2"
-data_path = "~/datasets/nickrosh/Evol-Instruct-Code-80k-v1"
-batch_size = 8
-
-model_dir = Path(model_dir).expanduser()
-data_path = Path(data_path).expanduser()
+model_dir = Path(args.model_dir).expanduser()
+data_path = Path(args.data_path).expanduser()
+batch_size = args.batch_size
 
 config = AutoConfig.from_pretrained(model_dir)
 with init_empty_weights():
@@ -60,10 +66,11 @@ collater = DataCollatorWithPadding(tokenizer=tokenizer, padding=True, pad_to_mul
 
 testdataset = load_from_disk(data_path)
 testdataset = testdataset['train']
-testdataset = testdataset.shard(num_shards=10, index=0)
-prompt_template = "Below is an instruction that describes a request regarding programming. "\
-                  "Write a response that appropriately completes the request.\n\n"\
-                  "### Instruction:\n{instruction}\n\n### Response:\n"
+testdataset = testdataset.shard(num_shards=100, index=0)
+prompt_template = "### System Prompt\nYou are an intelligent programming assistant.\n\n### User Message\n{instruction}\n\n### Assistant\n"
+# prompt_template = "Below is an instruction that describes a request regarding programming. "\
+#                   "Write a response that appropriately completes the request.\n\n"\
+#                   "### Instruction:\n{instruction}\n\n### Response:\n"
 
 def preprocess(sample, tokenizer=tokenizer):
     prompt = prompt_template.format(instruction=sample['instruction'])
@@ -86,6 +93,7 @@ nlls = []
 skipped = 0
 with tqdm(total=len(testdataset), unit='sample') as pbar:
     for batch in testloader:
+        batch_size = batch['input_ids'].shape[0]
         try:
             input_ids = batch['input_ids']
             labels = input_ids.clone()

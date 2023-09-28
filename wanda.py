@@ -172,3 +172,4 @@ save_path = "out/my_prune/model"
 #         delattr(module, param_name)
 #         setattr(module, param_name, cpu_param)
 model.save_pretrained(save_path)
+tokenizer.save_pretrained(save_path)

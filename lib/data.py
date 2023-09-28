@@ -77,9 +77,10 @@ def get_code(nsamples, seed, tokenizer):
     random.seed(seed)
     samples = []
 
-    prompt_template = "Below is an instruction that describes a request regarding programming. "\
-                      "Write a response that appropriately completes the request.\n\n"\
-                      "### Instruction:\n{instruction}\n\n### Response:\n{response}"
+    # prompt_template = "Below is an instruction that describes a request regarding programming. "\
+    #                   "Write a response that appropriately completes the request.\n\n"\
+    #                   "### Instruction:\n{instruction}\n\n### Response:\n{response}"
+    prompt_template = "### System Prompt\nYou are an intelligent programming assistant.\n\n### User Message\n{instruction}\n\n### Assistant\n{response}"
     for i in random.sample(range(len(data)), nsamples):
         prompt = prompt_template.format(instruction=data[i]['instruction'], response=data[i]['output'])
         samples.append(prompt)
