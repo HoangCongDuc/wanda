@@ -92,10 +92,10 @@ for i, layer in enumerate(model.model.layers):
     # else:
     #     weight = next(iter(layer.parameters()))
     #     execution_device = weight.device
-    temp_layer = layer.to(execution_device)
+    layer.to(execution_device)
     hidden_states = hidden_states.to(execution_device)
     position_ids = position_ids.to(execution_device)
-    for name, module in temp_layer.named_modules():
+    for name, module in layer.named_modules():
         if not isinstance(module, nn.Linear):
             continue
         
@@ -111,7 +111,7 @@ for i, layer in enumerate(model.model.layers):
     start_index = 0
     while start_index < nsamples:
         attention_mask = get_attention_mask(train_samples['attention_mask'][start_index:start_index+batch_size], execution_device)
-        temp_layer(hidden_states[start_index:start_index+batch_size],
+        layer(hidden_states[start_index:start_index+batch_size],
               attention_mask=attention_mask,
               position_ids=position_ids
         )
@@ -135,14 +135,14 @@ for i, layer in enumerate(model.model.layers):
     start_index = 0
     while start_index < nsamples:
         attention_mask = get_attention_mask(train_samples['attention_mask'][start_index:start_index+batch_size], execution_device)
-        out = temp_layer(hidden_states[start_index:start_index+batch_size],
+        out = layer(hidden_states[start_index:start_index+batch_size],
                     attention_mask=attention_mask,
                     position_ids=position_ids
         )
         outs.append(out[0])
         start_index += batch_size
     hidden_states = torch.cat(outs, dim=0)
-    layer.load_state_dict(temp_layer.cpu().state_dict())
+    layer.to('cpu')
     torch.cuda.empty_cache()
 
 def get_weight_map(module):
